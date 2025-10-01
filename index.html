@@ -445,6 +445,8 @@
         let targetTemp = 350; // 목표 온도
         let isInitialHeating = true; // 처음 가열 중인지 여부
         let animationId;
+        let simulationStartTime = 0; // 시뮬레이션 시작 시간
+        let particleGenerationStopped = false; // 입자 생성 중단 여부
 
         // 분자 초기화
         function initMolecules() {
@@ -459,7 +461,7 @@
 
         // 새로운 분자 생성 (석유 공급)
         function addNewMolecule() {
-            if (!isRunning) return;
+            if (!isRunning || particleGenerationStopped) return;
             
             const types = Object.keys(substances);
             const randomType = types[Math.floor(Math.random() * types.length)];
@@ -533,6 +535,16 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // 30초 후 입자 생성 중단 체크
+            if (!particleGenerationStopped && isRunning) {
+                const currentTime = Date.now();
+                const elapsedTime = (currentTime - simulationStartTime) / 1000; // 초 단위
+                if (elapsedTime >= 30) {
+                    particleGenerationStopped = true;
+                    console.log('30초 경과: 입자 생성이 중단되었습니다.');
+                }
+            }
+            
             // 온도가 천천히 올라가는 로직
             if (isInitialHeating) {
                 // 처음 가열 시에는 매우 천천히 (4배 더 느리게)
@@ -553,7 +565,7 @@
             
             drawBackground();
 
-            // 매 30프레임마다 새로운 분자 생성 (석유 공급)
+            // 매 30프레임마다 새로운 분자 생성 (석유 공급) - 30초 후 중단
             frameCount++;
             if (frameCount % 30 === 0) {
                 addNewMolecule();
@@ -599,6 +611,8 @@
                 currentTemp = 0;
                 targetTemp = parseInt(document.getElementById('tempSlider').value);
                 isInitialHeating = true; // 처음 가열 상태로 설정
+                simulationStartTime = Date.now(); // 시뮬레이션 시작 시간 기록
+                particleGenerationStopped = false; // 입자 생성 상태 초기화
                 if (molecules.length === 0) {
                     initMolecules();
                 }
@@ -616,6 +630,8 @@
             currentTemp = 0; // 온도를 0으로 리셋
             targetTemp = parseInt(document.getElementById('tempSlider').value);
             isInitialHeating = true; // 처음 가열 상태로 리셋
+            particleGenerationStopped = false; // 입자 생성 상태 리셋
+            simulationStartTime = 0; // 시뮬레이션 시작 시간 리셋
             initMolecules();
             document.getElementById('startBtn').textContent = '▶ 시뮬레이션 시작';
             document.getElementById('startBtn').style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
